@@ -10,7 +10,8 @@ Chrono Timer Code Taken from Dr. Bethel's  Benchmark Harness
 */
 
 #include <iostream>
-#include <math.h>
+#include <cmath>
+#include <chrono>
 
 // function to add the elements of two arrays
 void add(int n, float *x, float *y)
