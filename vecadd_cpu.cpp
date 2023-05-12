@@ -4,6 +4,9 @@ Vector Addition code taken from Mark Harris:
 https://developer.nvidia.com/blog/even-easier-introduction-cuda/
 
 Modified problem size to N=1<<26 (64M) 
+
+Chrono Timer Code Taken from Dr. Bethel's  Benchmark Harness
+
 */
 
 #include <iostream>
