@@ -13,10 +13,12 @@ Modified problem size to N=1<<26 (64M)
 
 // Kernel function to add the elements of two arrays
 __global__
-void add(int n, float *x, float *y)  //global runs on gpu
+void add(int n, float *x, float *y)
 {
-  for (int i = 0; i < n; i++)
-      y[i] = x[i] + y[i];
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  int stride = blockDim.x * gridDim.x;
+  for (int i = index; i < n; i += stride)
+    y[i] = x[i] + y[i];
 }
 
 int main(void)
@@ -28,25 +30,12 @@ int main(void)
   cudaMallocManaged(&x, N*sizeof(float));
   cudaMallocManaged(&y, N*sizeof(float));
 
-
  // initialize x and y arrays on the host
   for (int i = 0; i < N; i++) {
     x[i] = 1.0f;
     y[i] = 2.0f;
   }
-
-  /* timer code here taken from Benchmark.cpp
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
-  */
-
-  // Run kernel on 1M elements on the CPU
-  add<<<1, 1>>>(N, x, y);
-
-  /* timer code here taken from Benchmark.cpp
-  std::chrono::time_point<std::chrono::high_resolution_clock> end_time = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> elapsed = end_time - start_time;
-  std::cout << "Elapsed time is: " << elapsed.count() << " seconds" << std::endl;
-  */
+  add<<<1, 256>>>(N, x, y); //changed thread size
 
   // Wait for GPU to finish before accessing on host
   cudaDeviceSynchronize();
