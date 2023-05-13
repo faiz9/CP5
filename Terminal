@@ -1,0 +1,260 @@
+   std::chrono::time_point<std::chrono::high_resolution_clock> end_time = std::chrono::high_resolution_clock::now();
+                                                               ^~~~~~~~
+vecadd_cpu.cpp:42:63: note: suggested alternative: ‘ctime’
+   std::chrono::time_point<std::chrono::high_resolution_clock> end_time = std::chrono::high_resolution_clock::now();
+                                                               ^~~~~~~~
+                                                               ctime
+vecadd_cpu.cpp:42:79: error: ‘std::chrono’ has not been declared
+ ono::time_point<std::chrono::high_resolution_clock> end_time = std::chrono::high_resolution_clock::now();
+                                                                     ^~~~~~
+vecadd_cpu.cpp:43:8: error: ‘std::chrono’ has not been declared
+   std::chrono::duration<double> elapsed = end_time - start_time;
+        ^~~~~~
+vecadd_cpu.cpp:43:25: error: expected primary-expression before ‘double’
+   std::chrono::duration<double> elapsed = end_time - start_time;
+                         ^~~~~~
+vecadd_cpu.cpp:44:39: error: ‘elapsed’ was not declared in this scope
+   std::cout << "Elapsed time is: " << elapsed.count() << " seconds" << std::endl;
+                                       ^~~~~~~
+sfaiz@perlmutter:login38:~/CP5> clear
+
+sfaiz@perlmutter:login38:~/CP5> git pull
+remote: Enumerating objects: 5, done.
+remote: Counting objects: 100% (5/5), done.
+remote: Compressing objects: 100% (1/1), done.
+remote: Total 3 (delta 2), reused 3 (delta 2), pack-reused 0
+Unpacking objects: 100% (3/3), 287 bytes | 95.00 KiB/s, done.
+From https://github.com/faiz9/CP5
+   9571e25..c0f6509  main       -> origin/main
+Updating 9571e25..c0f6509
+Fast-forward
+ vecadd_cpu.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+sfaiz@perlmutter:login38:~/CP5> nvcc vecadd_cpu.cpp -o vecadd_cpu
+sfaiz@perlmutter:login38:~/CP5> ./vecadd_cpu
+Elapsed time is: 0.223215 seconds
+Max error: 0
+sfaiz@perlmutter:login38:~/CP5> nvcc vecadd_gpu_1t.cu -o vecadd_gpu_1t
+sfaiz@perlmutter:login38:~/CP5> salloc --nodes 1 --qos interactive --time 00:30:00 --constraint gpu --gpus 1 --account=m3930
+
+salloc: Pending job allocation 8675566
+salloc: job 8675566 queued and waiting for resources
+
+^[[A^[[A^[[A^[[A^[[B^[[B^[[Asalloc: job 8675566 has been allocated resources
+salloc: Granted job allocation 8675566
+^[[Asalloc: Nodes nid008417 are ready for job
+
+
+^[[A^[[A^[[A^[[A^[[B^[[B^[[A^[[Asfaiz@nid008417:~/CP5> 
+sfaiz@nid008417:~/CP5> 
+sfaiz@nid008417:~/CP5> srun nsys nvprof ./vecadd_gpu_1t
+WARNING: vecadd_gpu_1t and any of its children processes will be profiled.
+
+Max error: 0
+Generating '/tmp/nsys-report-95e0.qdstrm'
+[1/7] [========================100%] report1.nsys-rep
+[2/7] [========================100%] report1.sqlite
+SKIPPED: /global/u2/s/sfaiz/CP5/report1.sqlite does not contain NV Tools Extension (NVTX) data.
+[3/7] Executing 'nvtxsum' stats report
+[4/7] Executing 'cudaapisum' stats report
+
+CUDA API Statistics:
+
+ Time (%)  Total Time (ns)  Num Calls     Avg (ns)         Med (ns)        Min (ns)       Max (ns)      StdDev (ns)            Name         
+ --------  ---------------  ---------  ---------------  ---------------  -------------  -------------  -------------  ----------------------
+     92.4    6,200,081,686          1  6,200,081,686.0  6,200,081,686.0  6,200,081,686  6,200,081,686            0.0  cudaDeviceSynchronize 
+      6.9      464,759,667          2    232,379,833.5    232,379,833.5         30,148    464,729,519  328,592,076.4  cudaMallocManaged     
+      0.6       42,938,520          2     21,469,260.0     21,469,260.0     19,227,345     23,711,175    3,170,546.6  cudaFree              
+      0.0           48,283          1         48,283.0         48,283.0         48,283         48,283            0.0  cudaLaunchKernel      
+      0.0            1,012          1          1,012.0          1,012.0          1,012          1,012            0.0  cuModuleGetLoadingMode
+
+[5/7] Executing 'gpukernsum' stats report
+
+CUDA Kernel Statistics:
+
+ Time (%)  Total Time (ns)  Instances     Avg (ns)         Med (ns)        Min (ns)       Max (ns)     StdDev (ns)             Name           
+ --------  ---------------  ---------  ---------------  ---------------  -------------  -------------  -----------  --------------------------
+    100.0    6,200,097,968          1  6,200,097,968.0  6,200,097,968.0  6,200,097,968  6,200,097,968          0.0  add(int, float *, float *)
+
+[6/7] Executing 'gpumemtimesum' stats report
+
+CUDA Memory Operation Statistics (by time):
+
+ Time (%)  Total Time (ns)  Count  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)              Operation            
+ --------  ---------------  -----  --------  --------  --------  --------  -----------  ---------------------------------
+     67.2       26,109,565  3,072   8,499.2   3,759.5     2,046    41,728     11,227.1  [CUDA Unified Memory memcpy HtoD]
+     32.8       12,768,767  1,536   8,313.0   3,007.5     1,535    42,144     11,463.3  [CUDA Unified Memory memcpy DtoH]
+
+[7/7] Executing 'gpumemsizesum' stats report
+
+CUDA Memory Operation Statistics (by size):
+
+ Total (MB)  Count  Avg (MB)  Med (MB)  Min (MB)  Max (MB)  StdDev (MB)              Operation            
+ ----------  -----  --------  --------  --------  --------  -----------  ---------------------------------
+    536.871  3,072     0.175     0.033     0.004     1.044        0.301  [CUDA Unified Memory memcpy HtoD]
+    268.435  1,536     0.175     0.033     0.004     1.044        0.301  [CUDA Unified Memory memcpy DtoH]
+
+Generated:
+    /global/u2/s/sfaiz/CP5/report1.nsys-rep
+    /global/u2/s/sfaiz/CP5/report1.sqlite
+sfaiz@nid008417:~/CP5> nvcc vecadd_gpu_256t.cu -o vecadd_gpu_256t
+sfaiz@nid008417:~/CP5> srun nsys nvprof ./vecadd_gpu_256t
+WARNING: vecadd_gpu_256t and any of its children processes will be profiled.
+
+Max error: 0
+Generating '/tmp/nsys-report-c333.qdstrm'
+[1/7] [========================100%] report2.nsys-rep
+[2/7] [========================100%] report2.sqlite
+SKIPPED: /global/u2/s/sfaiz/CP5/report2.sqlite does not contain NV Tools Extension (NVTX) data.
+[3/7] Executing 'nvtxsum' stats report
+[4/7] Executing 'cudaapisum' stats report
+
+CUDA API Statistics:
+
+ Time (%)  Total Time (ns)  Num Calls    Avg (ns)       Med (ns)      Min (ns)     Max (ns)     StdDev (ns)            Name         
+ --------  ---------------  ---------  -------------  -------------  -----------  -----------  -------------  ----------------------
+     57.1      309,403,349          2  154,701,674.5  154,701,674.5       24,768  309,378,581  218,746,179.0  cudaMallocManaged     
+     34.5      186,896,827          1  186,896,827.0  186,896,827.0  186,896,827  186,896,827            0.0  cudaDeviceSynchronize 
+      8.4       45,648,694          2   22,824,347.0   22,824,347.0   21,223,738   24,424,956    2,263,603.0  cudaFree              
+      0.0           55,366          1       55,366.0       55,366.0       55,366       55,366            0.0  cudaLaunchKernel      
+      0.0            1,373          1        1,373.0        1,373.0        1,373        1,373            0.0  cuModuleGetLoadingMode
+
+[5/7] Executing 'gpukernsum' stats report
+
+CUDA Kernel Statistics:
+
+ Time (%)  Total Time (ns)  Instances    Avg (ns)       Med (ns)      Min (ns)     Max (ns)    StdDev (ns)             Name           
+ --------  ---------------  ---------  -------------  -------------  -----------  -----------  -----------  --------------------------
+    100.0      186,899,386          1  186,899,386.0  186,899,386.0  186,899,386  186,899,386          0.0  add(int, float *, float *)
+
+[6/7] Executing 'gpumemtimesum' stats report
+
+CUDA Memory Operation Statistics (by time):
+
+ Time (%)  Total Time (ns)  Count  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)              Operation            
+ --------  ---------------  -----  --------  --------  --------  --------  -----------  ---------------------------------
+     67.2       26,175,711  3,072   8,520.7   3,743.5     2,046    43,776     11,257.4  [CUDA Unified Memory memcpy HtoD]
+     32.8       12,773,875  1,536   8,316.3   2,895.5     1,535    42,048     11,459.2  [CUDA Unified Memory memcpy DtoH]
+
+[7/7] Executing 'gpumemsizesum' stats report
+
+CUDA Memory Operation Statistics (by size):
+
+ Total (MB)  Count  Avg (MB)  Med (MB)  Min (MB)  Max (MB)  StdDev (MB)              Operation            
+ ----------  -----  --------  --------  --------  --------  -----------  ---------------------------------
+    536.871  3,072     0.175     0.033     0.004     1.044        0.301  [CUDA Unified Memory memcpy HtoD]
+    268.435  1,536     0.175     0.033     0.004     1.044        0.301  [CUDA Unified Memory memcpy DtoH]
+
+Generated:
+    /global/u2/s/sfaiz/CP5/report2.nsys-rep
+    /global/u2/s/sfaiz/CP5/report2.sqlite
+sfaiz@nid008417:~/CP5> nvcc vecadd_gpu_256t_manyblocks.cu -o
+/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: cannot open output file -I/opt/nvidia/hpc_sdk/Linux_x86_64/22.7/cuda/11.7/include: No such file or directory
+collect2: error: ld returned 1 exit status
+sfaiz@nid008417:~/CP5> nvcc vecadd_gpu_256t_manyblocks.cu -o
+/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: cannot open output file -I/opt/nvidia/hpc_sdk/Linux_x86_64/22.7/cuda/11.7/include: No such file or directory
+collect2: error: ld returned 1 exit status
+sfaiz@nid008417:~/CP5> nvcc vecadd_gpu_256t_manyblocks.cu -o vecadd_gpu_256t_manyblocks
+sfaiz@nid008417:~/CP5> srun nsys nvprof ./vecadd_gpu_256t_manyblocks
+WARNING: vecadd_gpu_256t_manyblocks and any of its children processes will be profiled.
+
+Max error: 0
+Generating '/tmp/nsys-report-40a5.qdstrm'
+[1/7] [========================100%] report3.nsys-rep
+[2/7] [========================100%] report3.sqlite
+SKIPPED: /global/u2/s/sfaiz/CP5/report3.sqlite does not contain NV Tools Extension (NVTX) data.
+[3/7] Executing 'nvtxsum' stats report
+[4/7] Executing 'cudaapisum' stats report
+
+CUDA API Statistics:
+
+ Time (%)  Total Time (ns)  Num Calls    Avg (ns)       Med (ns)      Min (ns)     Max (ns)     StdDev (ns)            Name         
+ --------  ---------------  ---------  -------------  -------------  -----------  -----------  -------------  ----------------------
+     57.2      305,650,700          2  152,825,350.0  152,825,350.0       30,920  305,619,780  216,083,955.2  cudaMallocManaged     
+     34.0      181,456,067          1  181,456,067.0  181,456,067.0  181,456,067  181,456,067            0.0  cudaDeviceSynchronize 
+      8.8       46,790,525          2   23,395,262.5   23,395,262.5   22,251,531   24,538,994    1,617,480.6  cudaFree              
+      0.0           47,531          1       47,531.0       47,531.0       47,531       47,531            0.0  cudaLaunchKernel      
+      0.0              922          1          922.0          922.0          922          922            0.0  cuModuleGetLoadingMode
+
+[5/7] Executing 'gpukernsum' stats report
+
+CUDA Kernel Statistics:
+
+ Time (%)  Total Time (ns)  Instances    Avg (ns)       Med (ns)      Min (ns)     Max (ns)    StdDev (ns)             Name           
+ --------  ---------------  ---------  -------------  -------------  -----------  -----------  -----------  --------------------------
+    100.0      181,458,694          1  181,458,694.0  181,458,694.0  181,458,694  181,458,694          0.0  add(int, float *, float *)
+
+[6/7] Executing 'gpumemtimesum' stats report
+
+CUDA Memory Operation Statistics (by time):
+
+ Time (%)  Total Time (ns)  Count  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)              Operation            
+ --------  ---------------  -----  --------  --------  --------  --------  -----------  ---------------------------------
+     67.2       26,168,908  3,072   8,518.5   3,631.0     2,015    42,976     11,252.0  [CUDA Unified Memory memcpy HtoD]
+     32.8       12,763,782  1,536   8,309.8   2,911.5     1,535    42,112     11,459.5  [CUDA Unified Memory memcpy DtoH]
+
+[7/7] Executing 'gpumemsizesum' stats report
+
+CUDA Memory Operation Statistics (by size):
+
+ Total (MB)  Count  Avg (MB)  Med (MB)  Min (MB)  Max (MB)  StdDev (MB)              Operation            
+ ----------  -----  --------  --------  --------  --------  -----------  ---------------------------------
+    536.871  3,072     0.175     0.033     0.004     1.044        0.301  [CUDA Unified Memory memcpy HtoD]
+    268.435  1,536     0.175     0.033     0.004     1.044        0.301  [CUDA Unified Memory memcpy DtoH]
+
+Generated:
+    /global/u2/s/sfaiz/CP5/report3.nsys-rep
+    /global/u2/s/sfaiz/CP5/report3.sqlite
+sfaiz@nid008417:~/CP5> nvcc vecadd_gpu_256t_manyblocks_prefetch.cu -o vecadd_gpu_256t_manyblocks_prefetch
+sfaiz@nid008417:~/CP5> srun nsys nvprof ./vecadd_gpu_256t_manyblocks_prefetch
+WARNING: vecadd_gpu_256t_manyblocks_prefetch and any of its children processes will be profiled.
+
+Max error: 0
+Generating '/tmp/nsys-report-9470.qdstrm'
+[1/7] [========================100%] report4.nsys-rep
+[2/7] [========================100%] report4.sqlite
+SKIPPED: /global/u2/s/sfaiz/CP5/report4.sqlite does not contain NV Tools Extension (NVTX) data.
+[3/7] Executing 'nvtxsum' stats report
+[4/7] Executing 'cudaapisum' stats report
+
+CUDA API Statistics:
+
+ Time (%)  Total Time (ns)  Num Calls    Avg (ns)       Med (ns)      Min (ns)     Max (ns)     StdDev (ns)            Name         
+ --------  ---------------  ---------  -------------  -------------  -----------  -----------  -------------  ----------------------
+     49.8      210,012,177          2  105,006,088.5  105,006,088.5       28,365  209,983,812  148,460,920.3  cudaMallocManaged     
+     35.6      150,018,014          1  150,018,014.0  150,018,014.0  150,018,014  150,018,014            0.0  cudaDeviceSynchronize 
+     10.0       42,376,590          2   21,188,295.0   21,188,295.0   19,096,593   23,279,997    2,958,113.3  cudaFree              
+      4.6       19,463,388          2    9,731,694.0    9,731,694.0      286,831   19,176,557   13,357,053.3  cudaMemPrefetchAsync  
+      0.0           50,207          1       50,207.0       50,207.0       50,207       50,207            0.0  cudaLaunchKernel      
+      0.0              932          1          932.0          932.0          932          932            0.0  cuModuleGetLoadingMode
+
+[5/7] Executing 'gpukernsum' stats report
+
+CUDA Kernel Statistics:
+
+ Time (%)  Total Time (ns)  Instances    Avg (ns)       Med (ns)      Min (ns)     Max (ns)    StdDev (ns)             Name           
+ --------  ---------------  ---------  -------------  -------------  -----------  -----------  -----------  --------------------------
+    100.0      129,336,760          1  129,336,760.0  129,336,760.0  129,336,760  129,336,760          0.0  add(int, float *, float *)
+
+[6/7] Executing 'gpumemtimesum' stats report
+
+CUDA Memory Operation Statistics (by time):
+
+ Time (%)  Total Time (ns)  Count  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)              Operation            
+ --------  ---------------  -----  --------  --------  --------  --------  -----------  ---------------------------------
+     61.8       20,656,599    256  80,689.8  80,640.0    80,576    84,192        313.6  [CUDA Unified Memory memcpy HtoD]
+     38.2       12,773,674  1,536   8,316.2   3,055.5     1,535    42,272     11,469.7  [CUDA Unified Memory memcpy DtoH]
+
+[7/7] Executing 'gpumemsizesum' stats report
+
+CUDA Memory Operation Statistics (by size):
+
+ Total (MB)  Count  Avg (MB)  Med (MB)  Min (MB)  Max (MB)  StdDev (MB)              Operation            
+ ----------  -----  --------  --------  --------  --------  -----------  ---------------------------------
+    536.871    256     2.097     2.097     2.097     2.097        0.000  [CUDA Unified Memory memcpy HtoD]
+    268.435  1,536     0.175     0.033     0.004     1.044        0.301  [CUDA Unified Memory memcpy DtoH]
+
+Generated:
+    /global/u2/s/sfaiz/CP5/report4.nsys-rep
+    /global/u2/s/sfaiz/CP5/report4.sqlite
+sfaiz@nid008417:~/CP5> 
